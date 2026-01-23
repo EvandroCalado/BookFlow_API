@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 
+from src.books.routers import router as books_router
+
 app = FastAPI()
 
-
-@app.get('/')
-def read_root():
-    return {'Hello': 'World'}
+app.include_router(books_router, prefix='/books', tags=['Books'])
