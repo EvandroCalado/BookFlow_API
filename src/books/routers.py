@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, status
 
 from src.books.deps import BookServiceDep
@@ -19,17 +21,17 @@ async def get_all(book_service: BookServiceDep):
 
 
 @books_router.get('/{book_id}', response_model=BookOut)
-async def get_one(book_service: BookServiceDep, book_id: int):
+async def get_one(book_service: BookServiceDep, book_id: UUID):
     return await book_service.get_one(book_id)
 
 
 @books_router.patch('/{book_id}', response_model=BookOut)
 async def update(
-    book_service: BookServiceDep, book_id: int, book_update: BookUpdate
+    book_service: BookServiceDep, book_id: UUID, book_update: BookUpdate
 ):
     return await book_service.update(book_id, book_update)
 
 
 @books_router.delete('/{book_id}', response_model=BookMessage)
-async def delete(book_service: BookServiceDep, book_id: int):
+async def delete(book_service: BookServiceDep, book_id: UUID):
     return await book_service.delete(book_id)

@@ -2,15 +2,12 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.books.books_data import books as books_data
-from src.books.models import Book
 from src.books.services import BookService
+from src.db.session import SessionDep
 
-books_db: list[Book] = [Book(**book) for book in books_data]
 
-
-def get_book_service():
-    return BookService(books_db)
+def get_book_service(session: SessionDep):
+    return BookService(session)
 
 
 BookServiceDep = Annotated[BookService, Depends(get_book_service)]
