@@ -1,9 +1,5 @@
-from datetime import datetime
-from uuid import UUID
-
 from pydantic import (
     BaseModel,
-    ConfigDict,
     EmailStr,
     Field,
 )
@@ -19,12 +15,21 @@ class UserCreate(UserBase):
     pass
 
 
-class UserOut(BaseModel):
-    id: UUID
-    username: str
+class UserLogin(BaseModel):
     email: EmailStr
-    is_verified: bool
-    created_at: datetime
-    updated_at: datetime
+    password: str
 
-    model_config = ConfigDict(from_attributes=True)
+
+class UserRegisterOut(BaseModel):
+    message: str
+
+
+# class UserOut(BaseModel):
+#     id: UUID
+#     username: str
+#     email: EmailStr
+#     is_verified: bool
+#     created_at: datetime
+#     updated_at: datetime
+
+#     model_config = ConfigDict(from_attributes=True)
