@@ -18,7 +18,7 @@ class BookService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, book_create: BookCreate):
+    async def create(self, book_create: BookCreate) -> Book:
         new_book = Book(
             **book_create.model_dump(),
         )
@@ -29,7 +29,7 @@ class BookService:
 
         return new_book
 
-    async def get_all(self, page: int, limit: int):
+    async def get_all(self, page: int, limit: int) -> PaginatedBooksOut:
         query = select(Book).order_by(desc(col(Book.created_at)))
 
         count_stmt = select(func.count(col(Book.id)))
@@ -46,7 +46,7 @@ class BookService:
             limit=limit,
         )
 
-    async def get_one(self, book_id: UUID):
+    async def get_one(self, book_id: UUID) -> Book:
         stmt = select(Book).where(Book.id == book_id)
         result = await self.session.execute(stmt)
         book = result.scalar_one_or_none()
@@ -58,7 +58,7 @@ class BookService:
 
         return book
 
-    async def update(self, book_id: UUID, book_update: BookUpdate):
+    async def update(self, book_id: UUID, book_update: BookUpdate) -> Book:
         book = await self.get_one(book_id)
 
         for key, value in book_update.model_dump(exclude_unset=True).items():
@@ -69,7 +69,7 @@ class BookService:
 
         return book
 
-    async def delete(self, book_id: UUID):
+    async def delete(self, book_id: UUID) -> BookMessage:
         book = await self.get_one(book_id)
 
         await self.session.delete(book)
