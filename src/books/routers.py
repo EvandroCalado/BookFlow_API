@@ -1,9 +1,17 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from src.books.deps import BookServiceDep
-from src.books.schemas import BookCreate, BookMessage, BookOut, BookUpdate
+from src.books.schemas import (
+    BookCreate,
+    BookMessage,
+    BookOut,
+    BookUpdate,
+    PaginatedBooksOut,
+    PaginationParams,
+)
 
 books_router = APIRouter()
 
@@ -15,9 +23,14 @@ async def create(book_service: BookServiceDep, book_create: BookCreate):
     return await book_service.create(book_create)
 
 
-@books_router.get('/', response_model=list[BookOut])
-async def get_all(book_service: BookServiceDep):
-    return await book_service.get_all()
+@books_router.get('/', response_model=PaginatedBooksOut)
+async def get_all(
+    book_service: BookServiceDep,
+    pagination_params: Annotated[PaginationParams, Depends()],
+):
+    return await book_service.get_all(
+        pagination_params.page, pagination_params.limit
+    )
 
 
 @books_router.get('/{book_id}', response_model=BookOut)

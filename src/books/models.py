@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy.dialects import postgresql as pg
@@ -18,7 +18,7 @@ class Book(SQLModel, table=True):
     title: str
     author: str
     publisher: str
-    published_date: str
+    published_date: date
     page_count: int
     language: str
     created_at: datetime = Field(

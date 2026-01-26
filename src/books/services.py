@@ -1,11 +1,17 @@
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from sqlalchemy import desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 from src.books.models import Book
-from src.books.schemas import BookCreate, BookMessage, BookUpdate
+from src.books.schemas import (
+    BookCreate,
+    BookMessage,
+    BookUpdate,
+    PaginatedBooksOut,
+)
 
 
 class BookService:
@@ -23,12 +29,22 @@ class BookService:
 
         return new_book
 
-    async def get_all(self):
-        stmt = select(Book)
+    async def get_all(self, page: int, limit: int):
+        query = select(Book).order_by(desc(col(Book.created_at)))
+
+        count_stmt = select(func.count(col(Book.id)))
+        total = await self.session.scalar(count_stmt) or 0
+
+        stmt = query.limit(limit).offset((page - 1) * limit)
         result = await self.session.execute(stmt)
         books = result.scalars().all()
 
-        return books
+        return PaginatedBooksOut(
+            books=books,
+            total=total,
+            page=page,
+            limit=limit,
+        )
 
     async def get_one(self, book_id: UUID):
         stmt = select(Book).where(Book.id == book_id)
