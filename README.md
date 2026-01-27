@@ -14,6 +14,7 @@ O projeto foi construído utilizando uma stack moderna focada em performance e s
 - **[Alembic](https://alembic.sqlalchemy.org/)**: Ferramenta de migração de banco de dados.
 - **[Pydantic](https://docs.pydantic.dev/)**: Validação de dados e gerenciamento de configurações.
 - **[Argon2](https://github.com/p-h-c/phc-winner-argon2)**: Algoritmo seguro para hash de senhas.
+- **[PyJWT](https://pyjwt.readthedocs.io/)**: Implementação de tokens JWT para autenticação segura.
 - **[Ruff](https://docs.astral.sh/ruff/)**: Linter e formatador de código extremamente rápido.
 - **[Taskipy](https://github.com/taskipy/taskipy)**: Automação de tarefas e comandos do projeto.
 
@@ -23,7 +24,8 @@ O projeto foi construído utilizando uma stack moderna focada em performance e s
 
 ### 🔐 Autenticação e Usuários
 - **Registro de Usuários**: Endpoint seguro para criação de novas contas (`/auth/register`).
-- **Segurança**: Senhas criptografadas utilizando Argon2.
+- **Login**: Autenticação de usuários via JWT (JSON Web Tokens) (`/auth/login`).
+- **Segurança**: Senhas criptografadas utilizando Argon2 e rotas protegidas por tokens de acesso.
 
 ### 📖 Gerenciamento de Livros
 CRUD completo para recursos bibliográficos:
