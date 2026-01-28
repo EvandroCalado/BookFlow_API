@@ -41,7 +41,9 @@ class AuthService:
             message='User registered successfully',
         )
 
-    async def login(self, form_data: OAuth2PasswordRequestForm):
+    async def login(
+        self, form_data: OAuth2PasswordRequestForm
+    ) -> JSONResponse:
         stmt = select(User).where(User.email == form_data.username)
         result = await self.session.execute(stmt)
         user = result.scalar_one_or_none()
