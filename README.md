@@ -23,9 +23,16 @@ O projeto foi construído utilizando uma stack moderna focada em performance e s
 ## ✨ Funcionalidades (Até o momento)
 
 ### 🔐 Autenticação e Usuários
-- **Registro de Usuários**: Endpoint seguro para criação de novas contas (`/auth/register`).
-- **Login**: Autenticação de usuários via JWT (JSON Web Tokens) (`/auth/login`).
-- **Segurança**: Senhas criptografadas utilizando Argon2 e rotas protegidas por tokens de acesso.
+- **Registro de Usuários**: Endpoint seguro para criação de novas contas (`POST /auth/register`).
+- **Login com OAuth2**: Autenticação de usuários utilizando **OAuth2 Password Flow** com JWT (JSON Web Tokens) (`POST /auth/login`).
+  - Suporte ao padrão OAuth2 com `username` e `password` via formulário
+  - Retorna `access_token` e `token_type` para autenticação subsequente
+- **Perfil do Usuário**: Endpoint protegido para recuperar informações do usuário autenticado (`GET /auth/me`).
+- **Segurança Avançada**: 
+  - Senhas criptografadas utilizando **Argon2** (algoritmo vencedor do Password Hashing Competition)
+  - Tokens JWT com expiração configurável e validação robusta
+  - Rotas protegidas por autenticação Bearer Token
+  - Tratamento de tokens expirados e inválidos com mensagens de erro apropriadas
 
 ### 📖 Gerenciamento de Livros
 CRUD completo para recursos bibliográficos:
@@ -56,8 +63,20 @@ cd BookFlow_API
 Crie um arquivo `.env` na raiz do projeto com base no exemplo abaixo:
 
 ```ini
+# Database
 DATABASE_URL=postgresql+asyncpg://usuario:senha@localhost:5432/bookflow_db
+
+# JWT Authentication
+JWT_SECRET_KEY=sua_chave_secreta_super_segura_aqui_mude_em_producao
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=30
 ```
+
+> ⚠️ **Importante**: Em produção, use uma chave secreta forte e única. Você pode gerar uma com:
+> ```bash
+> python -c "import secrets; print(secrets.token_urlsafe(32))"
+> ```
 
 ### 3. Instalar Dependências
 
@@ -101,6 +120,42 @@ O FastAPI gera automaticamente documentação interativa. Após rodar o projeto,
 - **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) - Teste os endpoints diretamente pelo navegador.
 - **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) - Documentação alternativa e elegante.
 
+### 🔑 Como Testar a Autenticação
+
+#### 1. Registrar um novo usuário
+```bash
+curl -X POST "http://127.0.0.1:8000/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "password": "senha_segura123"
+  }'
+```
+
+#### 2. Fazer Login (OAuth2 Password Flow)
+```bash
+curl -X POST "http://127.0.0.1:8000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=joao@example.com&password=senha_segura123"
+```
+
+Resposta:
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+#### 3. Acessar Rota Protegida (Perfil do Usuário)
+```bash
+curl -X GET "http://127.0.0.1:8000/auth/me" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+> 💡 **Dica**: No Swagger UI ([/docs](http://127.0.0.1:8000/docs)), clique no botão **"Authorize"** 🔓 no topo da página, insira suas credenciais e todos os endpoints protegidos serão automaticamente autenticados!
+
 ---
 
 ## 📂 Estrutura do Projeto
@@ -108,9 +163,17 @@ O FastAPI gera automaticamente documentação interativa. Após rodar o projeto,
 ```
 BookFlow_API/
 ├── src/
-│   ├── auth/          # Módulo de Autenticação (Rotas, Schemas, Serviços)
+│   ├── auth/          # Módulo de Autenticação
+│   │   ├── routers.py     # Endpoints (register, login, me)
+│   │   ├── schemas.py     # Modelos Pydantic para validação
+│   │   ├── services.py    # Lógica de negócio de autenticação
+│   │   ├── models.py      # Modelo SQLModel do usuário
+│   │   ├── utils.py       # Funções auxiliares (hash, JWT, OAuth2)
+│   │   └── deps.py        # Dependências do FastAPI
 │   ├── books/         # Módulo de Livros (CRUD completo)
 │   ├── db/            # Configurações do Banco de Dados
+│   │   ├── config.py      # Configurações e variáveis de ambiente
+│   │   └── session.py     # Gerenciamento de sessões do banco
 │   └── main.py        # Entrypoint da aplicação
 ├── migrations/        # Scripts de migração do Alembic
 ├── alembic.ini        # Configuração do Alembic
