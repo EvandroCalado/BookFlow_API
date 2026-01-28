@@ -1,12 +1,13 @@
 from datetime import timedelta
 
 from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from starlette.responses import JSONResponse
 
 from src.auth.models import User
-from src.auth.schemas import UserCreate, UserLogin, UserRegisterOut
+from src.auth.schemas import UserCreate, UserRegisterOut
 from src.auth.utils import create_access_token, hash_password, verify_password
 from src.db.config import settings
 
@@ -40,12 +41,12 @@ class AuthService:
             message='User registered successfully',
         )
 
-    async def login(self, user_login: UserLogin):
-        stmt = select(User).where(User.email == user_login.email)
+    async def login(self, form_data: OAuth2PasswordRequestForm):
+        stmt = select(User).where(User.email == form_data.username)
         result = await self.session.execute(stmt)
         user = result.scalar_one_or_none()
 
-        if not user or not verify_password(user_login.password, user.password):
+        if not user or not verify_password(form_data.password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Invalid email or password',

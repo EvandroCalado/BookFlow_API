@@ -1,14 +1,19 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
 import jwt
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
+from sqlmodel import select
 
+from src.auth.models import User
 from src.db.config import settings
+from src.db.session import SessionDep
 
 pwd_context = CryptContext(schemes=['argon2'], deprecated='auto')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/login')
 
 
 def hash_password(password: str) -> str:
@@ -29,7 +34,7 @@ def create_access_token(
     payload: dict[str, Any] = {}
 
     payload['user'] = data
-    payload['exp'] = datetime.now() + expires_delta
+    payload['exp'] = datetime.now(timezone.utc) + expires_delta
     payload['jti'] = str(uuid4())
     payload['refresh'] = refresh
 
@@ -60,3 +65,43 @@ def decode_token(token: str) -> dict[str, Any]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token'
         )
+
+
+async def get_current_user(
+    session: SessionDep, token: str = Depends(oauth2_scheme)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Invalid authentication credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
+    )
+
+    try:
+        payload = jwt.decode(
+            jwt=token,
+            key=settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+
+        email: str = payload.get('user')['email']
+
+        if not email:
+            raise credentials_exception
+
+    except jwt.ExpiredSignatureError:
+        raise credentials_exception
+
+    except jwt.InvalidTokenError:
+        raise credentials_exception
+
+    except jwt.PyJWTError:
+        raise credentials_exception
+
+    stmt = select(User).where(User.email == email)
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise credentials_exception
+
+    return user
